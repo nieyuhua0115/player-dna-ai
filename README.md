@@ -13,3 +13,31 @@ The first version is intentionally simple:
 - no required inference server
 
 See `agent.md` for the project requirements, technical design, GitHub workflow, and implementation roadmap.
+
+## Local setup
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the web app:
+
+```bash
+npm run dev
+```
+
+Open:
+
+```txt
+http://localhost:3000
+```
+
+Check the scaffold:
+
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```
