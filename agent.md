@@ -269,6 +269,7 @@ npm run dev
 Run checks:
 
 ```bash
+npm run test
 npm run typecheck
 npm run lint
 npm run build
