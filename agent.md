@@ -254,19 +254,27 @@ Do not push directly to `main` once the GitHub repository is active.
 
 ## Commands
 
-Commands will become concrete after the Next.js workspace is scaffolded.
-
-Expected future commands:
+Install dependencies:
 
 ```bash
-pnpm install
-pnpm dev
-pnpm test
-pnpm lint
-pnpm typecheck
+npm install
 ```
 
-If the repo uses npm instead of pnpm, document the change in README and this file.
+Run the web app:
+
+```bash
+npm run dev
+```
+
+Run checks:
+
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```
+
+The repo uses npm workspaces because pnpm is not installed in the current local environment.
 
 ## Diff Rules
 

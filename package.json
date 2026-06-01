@@ -1,0 +1,25 @@
+{
+  "name": "player-dna-ai",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web",
+    "lint": "npm run lint -w apps/web",
+    "typecheck": "npm run typecheck -w apps/web"
+  },
+  "overrides": {
+    "@typescript-eslint/eslint-plugin": "8.50.0",
+    "@typescript-eslint/parser": "8.50.0",
+    "@typescript-eslint/visitor-keys": "8.50.0",
+    "eslint": "8.57.1",
+    "postcss": "8.5.15"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}
