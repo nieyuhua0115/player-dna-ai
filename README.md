@@ -37,6 +37,7 @@ http://localhost:3000
 Check the scaffold:
 
 ```bash
+npm run test
 npm run typecheck
 npm run lint
 npm run build
