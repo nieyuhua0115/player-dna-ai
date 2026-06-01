@@ -204,3 +204,18 @@ export function createNeutralTraitVector(
     traitKeys.map((traitKey) => [traitKey, score]),
   ) as TraitVector;
 }
+
+export function createTraitVector(
+  overrides: TraitEffects,
+  baseline = neutralTraitScore,
+): TraitVector {
+  const vector = createNeutralTraitVector(baseline);
+
+  for (const [traitKey, value] of Object.entries(overrides)) {
+    if (isTraitKey(traitKey) && value !== undefined) {
+      vector[traitKey] = clampTraitScore(value);
+    }
+  }
+
+  return vector;
+}

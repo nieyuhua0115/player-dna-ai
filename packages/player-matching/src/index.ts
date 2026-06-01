@@ -1,6 +1,7 @@
 export {
   clampTraitScore,
   createNeutralTraitVector,
+  createTraitVector,
   isTraitKey,
   maxTraitScore,
   minTraitScore,
@@ -9,6 +10,10 @@ export {
   traitDefinitions,
   traitKeys,
 } from "./traits";
+
+export { buildUserStyleProfile, generatePlayerDNAResult } from "./scoring";
+
+export type { AnswerMap } from "./scoring";
 
 export type {
   TraitCategory,
