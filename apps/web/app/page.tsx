@@ -10,6 +10,7 @@ import {
   type TraitKey,
   type TraitVector,
 } from "@player-dna/player-matching";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { players } from "../data/players";
 import { questions } from "../data/questions";
@@ -124,46 +125,52 @@ export default function Home() {
 
 function IntroScreen({ onStart }: { onStart: () => void }) {
   return (
-    <section className="grid flex-1 items-center gap-10 py-12 lg:grid-cols-[1.05fr_0.95fr]">
+    <section className="grid flex-1 items-center gap-10 py-12 lg:grid-cols-[1fr_1fr]">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Questionnaire to player card
+          Choose your mode
         </p>
         <h2 className="mt-4 max-w-3xl text-5xl font-semibold leading-tight text-white">
-          找到你的职业球员风格 DNA。
+          PlayerDNA / Football Style Matcher
         </h2>
         <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-          回答 22 个关于位置、脚法、进攻选择、防守投入和比赛节奏的问题。系统会生成
-          trait vector，并和本地职业球员 profile 做相似度匹配。
+          一个本地可跑的足球风格实验室。你可以测自己的球风 DNA，也可以测世界杯期间是哪种看球吗喽。
         </p>
+      </div>
+
+      <div className="grid gap-4">
         <button
-          className="mt-8 rounded-md bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+          className="rounded-lg border border-emerald-300/35 bg-emerald-300 p-6 text-left text-slate-950 transition hover:bg-emerald-200"
           type="button"
           onClick={onStart}
         >
-          开始测试
+          <p className="text-sm font-bold uppercase tracking-[0.16em]">
+            PlayerDNA
+          </p>
+          <h3 className="mt-4 text-3xl font-black leading-tight">
+            我踢球像哪个职业球员？
+          </h3>
+          <p className="mt-3 text-sm font-semibold text-slate-800">
+            给踢球的人，测试你的球风 DNA。
+          </p>
         </button>
-      </div>
 
-      <div className="rounded-lg border border-white/10 bg-white/[0.04] p-6">
-        <h3 className="text-lg font-semibold">MVP output</h3>
-        <div className="mt-5 space-y-4 text-sm text-slate-300">
-          <PreviewRow label="Top match" value="Vinicius Jr / Saka / Kane ..." />
-          <PreviewRow label="Blend" value="Top 4 player percentages" />
-          <PreviewRow label="Archetype" value="Explosive Wide Carrier" />
-          <PreviewRow label="Report" value="中文球探风格总结" />
-        </div>
+        <Link
+          className="rounded-lg border border-lime-300/35 bg-white/[0.05] p-6 text-left transition hover:border-lime-300/70 hover:bg-white/[0.08]"
+          href="/fan-test"
+        >
+          <p className="text-sm font-bold uppercase tracking-[0.16em] text-lime-300">
+            Football SBTI 毒舌版
+          </p>
+          <h3 className="mt-4 text-3xl font-black leading-tight text-white">
+            世界杯犯病人格测试
+          </h3>
+          <p className="mt-3 text-sm font-semibold text-slate-300">
+            给所有看球的人，测测你是哪种看球吗喽。
+          </p>
+        </Link>
       </div>
     </section>
-  );
-}
-
-function PreviewRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-slate-900/70 px-4 py-3">
-      <span className="text-slate-400">{label}</span>
-      <span className="text-right font-medium text-white">{value}</span>
-    </div>
   );
 }
 
