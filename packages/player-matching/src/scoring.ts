@@ -34,6 +34,9 @@ const traitWeights: Record<TraitKey, number> = {
   offBall: 1.1,
   defensiveWorkRate: 0.9,
   pressing: 0.95,
+  tackling: 1.05,
+  interceptions: 1.05,
+  marking: 1.05,
   physicality: 1,
   holdUpPlay: 0.9,
   riskTaking: 0.85,
@@ -45,6 +48,11 @@ const traitWeights: Record<TraitKey, number> = {
   longPassing: 0.85,
   shortCombination: 1,
   finalThirdDecision: 1.15,
+  shotStopping: 1.2,
+  reflexes: 1.15,
+  handling: 1,
+  keeperDistribution: 0.95,
+  sweeperKeeping: 0.9,
 };
 
 const traitLabels = Object.fromEntries(
@@ -423,6 +431,9 @@ const traitStrengthCopy: Record<TraitKey, string> = {
   offBall: "无球跑位",
   defensiveWorkRate: "防守责任感",
   pressing: "压迫和反抢",
+  tackling: "抢断和下脚时机",
+  interceptions: "预判传球线路",
+  marking: "盯人与防守站位",
   physicality: "身体对抗",
   holdUpPlay: "背身拿球和做球",
   riskTaking: "承担高收益选择",
@@ -434,6 +445,11 @@ const traitStrengthCopy: Record<TraitKey, string> = {
   longPassing: "长传转移",
   shortCombination: "小范围配合",
   finalThirdDecision: "最终三区决策",
+  shotStopping: "扑救能力",
+  reflexes: "近距离反应",
+  handling: "接球和处理安全性",
+  keeperDistribution: "门将出球",
+  sweeperKeeping: "高位防线身后保护",
 };
 
 const traitDevelopmentCopy: Record<TraitKey, string> = {
@@ -451,6 +467,9 @@ const traitDevelopmentCopy: Record<TraitKey, string> = {
   offBall: "优化无球启动时机",
   defensiveWorkRate: "提升回防投入",
   pressing: "提高压迫触发判断",
+  tackling: "提升下脚时机和一对一防守",
+  interceptions: "加强预判和线路封堵",
+  marking: "提升盯人和身后保护",
   physicality: "增强对抗下动作质量",
   holdUpPlay: "提升背身保护和连接",
   riskTaking: "在关键区域承担更多选择",
@@ -462,4 +481,9 @@ const traitDevelopmentCopy: Record<TraitKey, string> = {
   longPassing: "增加长距离转移能力",
   shortCombination: "提升小范围一脚出球",
   finalThirdDecision: "提高最后一传和射门选择",
+  shotStopping: "提升扑救稳定性",
+  reflexes: "提升近距离反应速度",
+  handling: "提升接球和二点控制",
+  keeperDistribution: "提升门将出球选择",
+  sweeperKeeping: "提升出击时机和身后空间判断",
 };

@@ -31,8 +31,8 @@ This repository should serve three goals at the same time:
 V1 includes:
 - Next.js + TypeScript + Tailwind web app.
 - Local static data for questions and professional player profiles.
-- 20-30 football style questions.
-- 30-50 initial professional player profiles.
+- Common profile questions followed by role-specific football scenario questions.
+- Local professional player profiles across attackers, midfielders, defenders, fullbacks, and goalkeepers.
 - Deterministic trait scoring.
 - Weighted similarity matching.
 - Player DNA Card result page.
@@ -150,7 +150,20 @@ Avoid hidden randomness in V1.
 
 ## Initial Player Groups
 
-Start with attackers and midfielders.
+The current local MVP uses hand-curated approximate player style profiles. These are not official ratings, live scouting data, or values imported from a data provider. Treat them as explainable style priors for product testing.
+
+The current questionnaire starts from broad user-facing roles:
+- winger
+- forward
+- midfielder
+- defender
+- goalkeeper
+
+The matching library still keeps `fullback` as a player role family. Users choose `defender` first, then defender questions separate wide defenders/fullbacks from center backs through tags and trait effects.
+
+The player library is intentionally broad enough for demos and friend testing, including current players and classic players. Profile values can be edited as the shared project language improves.
+
+Initial anchor examples:
 
 Wingers:
 - Vinicius Jr
@@ -183,7 +196,30 @@ Midfielders:
 - Bruno Fernandes
 - Federico Valverde
 
-Defenders and goalkeepers are later scope.
+Defenders / fullbacks / goalkeepers:
+- Sergio Ramos
+- Paolo Maldini
+- Virgil van Dijk
+- Franz Beckenbauer
+- Fabio Cannavaro
+- Dani Alves
+- Roberto Carlos
+- Philipp Lahm
+- Alisson
+- Ederson
+- Gianluigi Buffon
+- Iker Casillas
+
+Classic and high-recognition examples:
+- Cristiano Ronaldo
+- Ronaldo Nazario
+- Thierry Henry
+- Neymar
+- Zinedine Zidane
+- Andres Iniesta
+- Xavi
+- Andrea Pirlo
+- Diego Maradona
 
 ## AI Inference Integration Plan
 

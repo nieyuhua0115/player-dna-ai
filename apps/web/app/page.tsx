@@ -1,39 +1,62 @@
 "use client";
 
 import {
-  buildUserStyleProfile,
-  generatePlayerDNAResult,
-  traitDefinitions,
-  type AnswerMap,
-  type PlayerDNAResult,
-  type Question,
   type TraitKey,
   type TraitVector,
 } from "@player-dna/player-matching";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { players } from "../data/players";
-import { questions } from "../data/questions";
+import { commonQuestions, getQuestionsForRole } from "../data/questions";
+import { localizeQuestion, uiCopy } from "../lib/i18n";
+import { buildUserTraits } from "../lib/scoring/buildUserTraits";
+import { matchPlayers } from "../lib/scoring/matchPlayers";
+import {
+  getRoleLabels,
+  getTraitLabels,
+  type Language,
+} from "../lib/scoring/traitCopy";
+import type {
+  PlayerDNAAnswerMap,
+  PlayerDNAQuestion,
+  PlayerDNAResult,
+  RoleFamily,
+  UserTraitProfile,
+} from "../lib/scoring/types";
 
 type StepState = "intro" | "quiz" | "result";
 
 export default function Home() {
   const [step, setStep] = useState<StepState>("intro");
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<AnswerMap>({});
+  const [answers, setAnswers] = useState<PlayerDNAAnswerMap>({});
+  const [language, setLanguage] = useState<Language>("zh");
 
+  const selectedRole = getSelectedRole(answers);
+  const questions = useMemo(() => getQuestionsForRole(selectedRole), [selectedRole]);
   const currentQuestion = questions[questionIndex];
-  const selectedOptionIds = answers[currentQuestion?.id] ?? [];
+  const localizedQuestion = currentQuestion ? localizeQuestion(currentQuestion, language) : undefined;
+  const selectedOptionValues = answers[currentQuestion?.id] ?? [];
   const answeredCount = questions.filter((question) => answers[question.id]?.length).length;
   const progress = Math.round((answeredCount / questions.length) * 100);
+  const copy = uiCopy[language];
+  const roleLabels = getRoleLabels(language);
 
-  const result = useMemo<PlayerDNAResult | null>(() => {
-    if (step !== "result") {
+  const userProfile = useMemo<UserTraitProfile | null>(() => {
+    if (!selectedRole) {
       return null;
     }
 
-    const userProfile = buildUserStyleProfile(questions, answers);
-    return generatePlayerDNAResult(userProfile, players);
-  }, [answers, step]);
+    return buildUserTraits(questions, answers, selectedRole);
+  }, [answers, questions, selectedRole]);
+
+  const result = useMemo<PlayerDNAResult | null>(() => {
+    if (step !== "result" || !userProfile) {
+      return null;
+    }
+
+    return matchPlayers(userProfile, players, language);
+  }, [language, step, userProfile]);
 
   function startQuiz() {
     setStep("quiz");
@@ -46,30 +69,28 @@ export default function Home() {
     setStep("intro");
   }
 
-  function selectOption(question: Question, optionId: string) {
-    setAnswers((previousAnswers) => {
-      const current = previousAnswers[question.id] ?? [];
-      const next =
-        question.type === "multi"
-          ? current.includes(optionId)
-            ? current.filter((id) => id !== optionId)
-            : [...current, optionId]
-          : [optionId];
-
-      return {
-        ...previousAnswers,
-        [question.id]: next,
-      };
-    });
+  function selectOption(question: PlayerDNAQuestion, optionValue: string) {
+    setAnswers((previousAnswers) => ({
+      ...previousAnswers,
+      [question.id]: [optionValue],
+    }));
   }
 
   function goNext() {
-    if (questionIndex === questions.length - 1) {
-      setStep("result");
+    if (!currentQuestion) {
       return;
     }
 
-    setQuestionIndex((index) => index + 1);
+    const nextIndex = questionIndex + 1;
+
+    if (nextIndex >= questions.length) {
+      if (selectedRole) {
+        setStep("result");
+      }
+      return;
+    }
+
+    setQuestionIndex(nextIndex);
   }
 
   function goPrevious() {
@@ -82,25 +103,38 @@ export default function Home() {
         <header className="flex items-center justify-between border-b border-white/10 pb-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">
-              Football Style Matcher
+              {copy.productLabel}
             </p>
             <h1 className="mt-2 text-2xl font-semibold">PlayerDNA</h1>
           </div>
-          <div className="rounded-md border border-white/15 px-3 py-2 text-sm text-slate-300">
-            Local MVP
+          <div className="flex items-center gap-2">
+            <button
+              className="rounded-md border border-white/15 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-emerald-300/70"
+              type="button"
+              onClick={() => setLanguage((current) => current === "zh" ? "en" : "zh")}
+            >
+              {copy.languageToggle}
+            </button>
+            <div className="rounded-md border border-white/15 px-3 py-2 text-sm text-slate-300">
+              {copy.localMvp}
+            </div>
           </div>
         </header>
 
         {step === "intro" ? (
-          <IntroScreen onStart={startQuiz} />
+          <IntroScreen copy={copy} onStart={startQuiz} />
         ) : null}
 
-        {step === "quiz" && currentQuestion ? (
+        {step === "quiz" && currentQuestion && localizedQuestion ? (
           <QuizScreen
+            copy={copy}
             currentIndex={questionIndex}
+            language={language}
             progress={progress}
-            question={currentQuestion}
-            selectedOptionIds={selectedOptionIds}
+            question={localizedQuestion}
+            roleFamily={selectedRole}
+            roleLabels={roleLabels}
+            selectedOptionValues={selectedOptionValues}
             totalQuestions={questions.length}
             onBack={goPrevious}
             onNext={goNext}
@@ -109,11 +143,16 @@ export default function Home() {
           />
         ) : null}
 
-        {step === "result" && result ? (
+        {step === "result" && result && userProfile ? (
           <ResultScreen
             answers={answers}
+            copy={copy}
+            language={language}
             result={result}
+            roleFamily={userProfile.roleFamily}
+            roleLabels={roleLabels}
             totalQuestions={questions.length}
+            userProfile={userProfile}
             onRestart={restart}
           />
         ) : null}
@@ -122,82 +161,109 @@ export default function Home() {
   );
 }
 
-function IntroScreen({ onStart }: { onStart: () => void }) {
+function IntroScreen({
+  copy,
+  onStart,
+}: {
+  copy: (typeof uiCopy)[Language];
+  onStart: () => void;
+}) {
   return (
-    <section className="grid flex-1 items-center gap-10 py-12 lg:grid-cols-[1.05fr_0.95fr]">
+    <section className="grid flex-1 items-center gap-10 py-12 lg:grid-cols-[1fr_1fr]">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-          Questionnaire to player card
+          {copy.chooseMode}
         </p>
         <h2 className="mt-4 max-w-3xl text-5xl font-semibold leading-tight text-white">
-          找到你的职业球员风格 DNA。
+          {copy.title}
         </h2>
         <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-          回答 22 个关于位置、脚法、进攻选择、防守投入和比赛节奏的问题。系统会生成
-          trait vector，并和本地职业球员 profile 做相似度匹配。
+          {copy.intro}
         </p>
+      </div>
+
+      <div className="grid gap-4">
         <button
-          className="mt-8 rounded-md bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+          className="rounded-lg border border-emerald-300/35 bg-emerald-300 p-6 text-left text-slate-950 transition hover:bg-emerald-200"
           type="button"
           onClick={onStart}
         >
-          开始测试
+          <p className="text-sm font-bold uppercase tracking-[0.16em]">
+            {copy.playerDnaMode}
+          </p>
+          <h3 className="mt-4 text-3xl font-black leading-tight">
+            {copy.playerDnaTitle}
+          </h3>
+          <p className="mt-3 text-sm font-semibold text-slate-800">
+            {copy.playerDnaDesc}
+          </p>
         </button>
-      </div>
 
-      <div className="rounded-lg border border-white/10 bg-white/[0.04] p-6">
-        <h3 className="text-lg font-semibold">MVP output</h3>
-        <div className="mt-5 space-y-4 text-sm text-slate-300">
-          <PreviewRow label="Top match" value="Vinicius Jr / Saka / Kane ..." />
-          <PreviewRow label="Blend" value="Top 4 player percentages" />
-          <PreviewRow label="Archetype" value="Explosive Wide Carrier" />
-          <PreviewRow label="Report" value="中文球探风格总结" />
-        </div>
+        <Link
+          className="rounded-lg border border-lime-300/35 bg-white/[0.05] p-6 text-left transition hover:border-lime-300/70 hover:bg-white/[0.08]"
+          href="/fan-test"
+        >
+          <p className="text-sm font-bold uppercase tracking-[0.16em] text-lime-300">
+            {copy.fanMode}
+          </p>
+          <h3 className="mt-4 text-3xl font-black leading-tight text-white">
+            {copy.fanTitle}
+          </h3>
+          <p className="mt-3 text-sm font-semibold text-slate-300">
+            {copy.fanDesc}
+          </p>
+        </Link>
       </div>
     </section>
   );
 }
 
-function PreviewRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-slate-900/70 px-4 py-3">
-      <span className="text-slate-400">{label}</span>
-      <span className="text-right font-medium text-white">{value}</span>
-    </div>
-  );
-}
-
 function QuizScreen({
+  copy,
   currentIndex,
+  language,
   progress,
   question,
-  selectedOptionIds,
+  roleFamily,
+  roleLabels,
+  selectedOptionValues,
   totalQuestions,
   onBack,
   onNext,
   onRestart,
   onSelect,
 }: {
+  copy: (typeof uiCopy)[Language];
   currentIndex: number;
+  language: Language;
   progress: number;
-  question: Question;
-  selectedOptionIds: string[];
+  question: PlayerDNAQuestion;
+  roleFamily?: RoleFamily;
+  roleLabels: Record<RoleFamily, string>;
+  selectedOptionValues: string[];
   totalQuestions: number;
   onBack: () => void;
   onNext: () => void;
   onRestart: () => void;
-  onSelect: (question: Question, optionId: string) => void;
+  onSelect: (question: PlayerDNAQuestion, optionValue: string) => void;
 }) {
-  const canContinue = selectedOptionIds.length > 0;
+  const canContinue = selectedOptionValues.length > 0;
+  const stageLabel = question.role === "common"
+    ? copy.commonProfile
+    : language === "zh"
+      ? `${roleLabels[question.role]}${copy.scenarioSuffix}`
+      : `${roleLabels[question.role]} ${copy.scenarioSuffix}`;
 
   return (
     <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col py-8">
       <div className="mb-8">
         <div className="flex items-center justify-between text-sm text-slate-400">
           <span>
-            Question {currentIndex + 1} / {totalQuestions}
+            {language === "zh"
+              ? `${copy.question} ${currentIndex + 1} ${copy.ofQuestions} ${totalQuestions} ${copy.questionsUnit}`
+              : `${copy.question} ${currentIndex + 1} ${copy.ofQuestions} ${totalQuestions}`}
           </span>
-          <span>{progress}% complete</span>
+          <span>{language === "zh" ? `${copy.progress} ${progress}%` : `${progress}% ${copy.progress}`}</span>
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
           <div
@@ -208,31 +274,39 @@ function QuizScreen({
       </div>
 
       <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5 sm:p-7">
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-300">
-          {question.category}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-300">
+            {stageLabel}
+          </p>
+          <p className="text-sm text-slate-400">
+            {roleFamily
+              ? roleLabels[roleFamily]
+              : language === "zh"
+                ? `${copy.commonFirst} ${commonQuestions.length} ${copy.commonFirstSuffix}`
+                : `${commonQuestions.length} ${copy.commonFirstSuffix}`}
+          </p>
+        </div>
         <h2 className="mt-3 text-2xl font-semibold leading-snug text-white">
           {question.text}
         </h2>
-
-        {question.type === "multi" ? (
-          <p className="mt-3 text-sm text-slate-400">可多选。</p>
+        {question.description ? (
+          <p className="mt-3 text-sm leading-6 text-slate-400">{question.description}</p>
         ) : null}
 
         <div className="mt-6 grid gap-3">
           {question.options.map((option) => {
-            const isSelected = selectedOptionIds.includes(option.id);
+            const isSelected = selectedOptionValues.includes(option.value);
 
             return (
               <button
-                key={option.id}
+                key={option.value}
                 className={`rounded-md border px-4 py-4 text-left text-sm font-medium transition ${
                   isSelected
                     ? "border-emerald-300 bg-emerald-300 text-slate-950"
                     : "border-white/10 bg-slate-900/80 text-slate-200 hover:border-emerald-300/70"
                 }`}
                 type="button"
-                onClick={() => onSelect(question, option.id)}
+                onClick={() => onSelect(question, option.value)}
               >
                 {option.label}
               </button>
@@ -247,7 +321,7 @@ function QuizScreen({
           type="button"
           onClick={onRestart}
         >
-          重新开始
+          {copy.restart}
         </button>
         <div className="flex gap-3">
           <button
@@ -256,7 +330,7 @@ function QuizScreen({
             type="button"
             onClick={onBack}
           >
-            上一题
+            {copy.previous}
           </button>
           <button
             className="rounded-md bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
@@ -264,7 +338,7 @@ function QuizScreen({
             type="button"
             onClick={onNext}
           >
-            {currentIndex === totalQuestions - 1 ? "查看结果" : "下一题"}
+            {currentIndex === totalQuestions - 1 ? copy.viewResult : copy.next}
           </button>
         </div>
       </div>
@@ -274,32 +348,42 @@ function QuizScreen({
 
 function ResultScreen({
   answers,
+  copy,
+  language,
   result,
+  roleFamily,
+  roleLabels,
   totalQuestions,
+  userProfile,
   onRestart,
 }: {
-  answers: AnswerMap;
+  answers: PlayerDNAAnswerMap;
+  copy: (typeof uiCopy)[Language];
+  language: Language;
   result: PlayerDNAResult;
+  roleFamily: RoleFamily;
+  roleLabels: Record<RoleFamily, string>;
   totalQuestions: number;
+  userProfile: UserTraitProfile;
   onRestart: () => void;
 }) {
   const answeredCount = Object.values(answers).filter((answer) => answer.length > 0).length;
-  const userProfile = buildUserStyleProfile(questions, answers);
-  const topTraits = getTopTraits(userProfile.traits, 8);
+  const topTraits = getTopTraits(userProfile.traits, 8, language);
 
   return (
     <section className="grid flex-1 gap-6 py-8 lg:grid-cols-[0.95fr_1.05fr]">
       <div className="rounded-lg border border-emerald-300/30 bg-emerald-300 p-6 text-slate-950">
         <p className="text-sm font-semibold uppercase tracking-[0.18em]">
-          Player DNA Card
+          {copy.cardTitle}
         </p>
         <h2 className="mt-4 text-4xl font-bold leading-tight">
           {result.topMatch.player.name}
         </h2>
-        <p className="mt-2 text-lg font-semibold">{result.archetype}</p>
+        <p className="mt-2 text-lg font-semibold">{result.userArchetype}</p>
         <p className="mt-5 text-sm leading-7 text-slate-800">
-          Based on {answeredCount} / {totalQuestions} answers. Deterministic
-          local matching, no external API.
+          {language === "zh"
+            ? `${copy.basedOnPrefix} ${answeredCount} / ${totalQuestions} ${copy.basedOnMiddle}${roleLabels[roleFamily]}${copy.basedOnSuffix}`
+            : `${copy.basedOnPrefix} ${answeredCount} ${copy.basedOnMiddle} ${totalQuestions} ${copy.basedOnSuffix}`}
         </p>
 
         <div className="mt-6 space-y-3">
@@ -324,29 +408,54 @@ function ResultScreen({
           type="button"
           onClick={onRestart}
         >
-          再测一次
+          {copy.retake}
         </button>
       </div>
 
       <div className="grid gap-6">
-        <Panel title="Scouting report">
-          <p className="text-sm leading-7 text-slate-300">{result.scoutingReport}</p>
+        <Panel title={copy.report}>
+          <p className="text-sm leading-7 text-slate-300">{result.report}</p>
+        </Panel>
+
+        <Panel title={copy.why}>
+          <div className="grid gap-4">
+            {result.matches.map((match) => (
+              <div key={match.player.id} className="rounded-md border border-white/10 bg-slate-900/70 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold text-white">{match.player.name}</p>
+                  <p className="text-sm text-emerald-300">
+                    {language === "zh"
+                      ? `${copy.matchScore} ${Math.round(match.finalScore * 100)}`
+                      : `${Math.round(match.finalScore * 100)} ${copy.matchScore}`}
+                  </p>
+                </div>
+                <div className="mt-3 grid gap-2 text-sm text-slate-300">
+                  {match.explanations.map((explanation) => (
+                    <div key={`${match.player.id}-${explanation.label}`} className="flex justify-between gap-4">
+                      <span className="text-slate-500">{explanation.label}</span>
+                      <span className="text-right">{explanation.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </Panel>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Panel title="Strengths">
+          <Panel title={copy.strengths}>
             <List items={result.strengths} />
           </Panel>
-          <Panel title="Development areas">
+          <Panel title={copy.development}>
             <List items={result.developmentAreas} />
           </Panel>
         </div>
 
-        <Panel title="Tactical fit">
+        <Panel title={copy.tacticalFit}>
           <List items={result.tacticalFit} />
         </Panel>
 
-        <Panel title="Trait snapshot">
+        <Panel title={copy.traitSnapshot}>
           <div className="grid gap-3 sm:grid-cols-2">
             {topTraits.map(({ key, label, value }) => (
               <div key={key}>
@@ -398,10 +507,8 @@ function List({ items }: { items: string[] }) {
   );
 }
 
-function getTopTraits(traits: TraitVector, count: number) {
-  const labels = Object.fromEntries(
-    traitDefinitions.map((trait) => [trait.key, trait.label]),
-  ) as Record<TraitKey, string>;
+function getTopTraits(traits: TraitVector, count: number, language: Language) {
+  const labels = getTraitLabels(language);
 
   return Object.entries(traits)
     .map(([key, value]) => ({
@@ -411,4 +518,21 @@ function getTopTraits(traits: TraitVector, count: number) {
     }))
     .sort((left, right) => right.value - left.value)
     .slice(0, count);
+}
+
+function getSelectedRole(answers: PlayerDNAAnswerMap): RoleFamily | undefined {
+  const value = answers.primary_role?.[0];
+
+  if (
+    value === "winger" ||
+    value === "fullback" ||
+    value === "defender" ||
+    value === "forward" ||
+    value === "midfielder" ||
+    value === "goalkeeper"
+  ) {
+    return value;
+  }
+
+  return undefined;
 }
