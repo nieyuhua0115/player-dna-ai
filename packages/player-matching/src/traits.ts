@@ -11,6 +11,7 @@ export const traitCategories = [
   "duels",
   "control",
   "movement",
+  "goalkeeping",
 ] as const;
 
 export type TraitCategory = (typeof traitCategories)[number];
@@ -108,6 +109,24 @@ export const traitDefinitions = [
     description: "Aggression and timing when closing opponents.",
   },
   {
+    key: "tackling",
+    label: "Tackling",
+    category: "defending",
+    description: "Timing and quality when engaging the ball carrier.",
+  },
+  {
+    key: "interceptions",
+    label: "Interceptions",
+    category: "defending",
+    description: "Reading passing lanes and stepping in before danger develops.",
+  },
+  {
+    key: "marking",
+    label: "Marking",
+    category: "defending",
+    description: "Tracking runners and controlling direct opponents.",
+  },
+  {
     key: "physicality",
     label: "Physicality",
     category: "duels",
@@ -172,6 +191,36 @@ export const traitDefinitions = [
     label: "Final-third Decision",
     category: "attacking",
     description: "Shot, pass, and carry choices near goal.",
+  },
+  {
+    key: "shotStopping",
+    label: "Shot Stopping",
+    category: "goalkeeping",
+    description: "Ability to prevent shots from becoming goals.",
+  },
+  {
+    key: "reflexes",
+    label: "Reflexes",
+    category: "goalkeeping",
+    description: "Reaction speed on close-range and deflected shots.",
+  },
+  {
+    key: "handling",
+    label: "Handling",
+    category: "goalkeeping",
+    description: "Security when claiming, catching, and controlling saves.",
+  },
+  {
+    key: "keeperDistribution",
+    label: "Keeper Distribution",
+    category: "goalkeeping",
+    description: "Quality of goalkeeper passing and buildup involvement.",
+  },
+  {
+    key: "sweeperKeeping",
+    label: "Sweeper Keeping",
+    category: "goalkeeping",
+    description: "Willingness to defend space behind the back line.",
   },
 ] as const satisfies readonly TraitDefinition[];
 

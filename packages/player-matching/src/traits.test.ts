@@ -9,10 +9,11 @@ import {
 
 describe("trait language system", () => {
   it("defines a stable set of unique trait keys", () => {
-    expect(traitKeys).toHaveLength(25);
+    expect(traitKeys).toHaveLength(33);
     expect(new Set(traitKeys).size).toBe(traitKeys.length);
     expect(traitKeys).toContain("pace");
     expect(traitKeys).toContain("finalThirdDecision");
+    expect(traitKeys).toContain("shotStopping");
   });
 
   it("keeps one definition per trait key", () => {
